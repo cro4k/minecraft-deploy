@@ -59,7 +59,7 @@ spec:
             # default: false
             - name: ENABLE_QUERY
               value: false
-            # 玩家空闲踢出时间，默认：0（不踢出）
+            # 玩家空闲踢出时间(分钟)，默认：0（不踢出）
             - name: PLAYER_IDLE_TIMEOUT
               value: 0
             # 游戏难度，"peaceful", "easy", "normal", "hard" 默认：easy
