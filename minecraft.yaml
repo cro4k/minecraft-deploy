@@ -1,0 +1,134 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minecraft-deployment
+  namespace: minecraft
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: minecraft
+  template:
+    metadata:
+      labels:
+        app: minecraft
+    spec:
+      containers:
+        - name: minecraft
+          image: hashicraft/minecraft:latest # 或者你想使用的具体标签
+          ports:
+            - containerPort: 25565 # Minecraft 默认端口
+          env:
+            # 导入世界备份，默认：null
+            # - name: WORLD_BACKUP
+            #   value: https://github.com/nicholasjackson/hashicraft/releases/download/v0.0.0/world2.tar.gz
+            # 导入mod备份，默认：null
+            # - name: MODS_BACKUP
+            #   value: https://github.com/nicholasjackson/hashicraft/releases/download/v0.0.0/mods.tar.gz
+            # 资源包，默认：null
+            # - name: RESOURCE_PACK
+            #   value: https://github.com/HashiCraft/terraform_minecraft_azure_containers/releases/download/files/KawaiiWorld1.12.zip
+            # java 内存配置（Gib），默认 1
+            - name: JAVA_MEMORY
+              value: 1
+            # Minecraft端口，默认 25565
+            - name: MINECRAFT_PORT
+              value: 25565
+            # 开启下界，默认 false
+            - name: ALLOW_NETHER
+              value: true
+            # 登入欢迎语
+            - name: MINECRAFT_MOTD
+              value: 'Welcome to the Minecraft server'  
+            # 是否开启 Rcon，默认 false
+            - name: RCON_ENABLED
+              value: true
+            # RCon 端口，默认 27015
+            - name: RCON_PORT
+              value: 27015
+            # Rcon 密码
+            - name: RCON_PASSWORD
+              value: 'A0:18#s781'
+            # 开启白名单 默认 true
+            - name: WHITELIST_ENABLED
+              value: true
+            # 游戏模式，"survival", "creative", or "adventure"，默认 creative
+            - name: GAME_MODE
+              value: survival
+            # Enables GameSpy4 protocol server listener. Used to get information about server.
+            # default: false
+            - name: ENABLE_QUERY
+              value: false
+            # 玩家空闲踢出时间，默认：0（不踢出）
+            - name: PLAYER_IDLE_TIMEOUT
+              value: 0
+            # 游戏难度，"peaceful", "easy", "normal", "hard" 默认：easy
+            - name: DIFFICULTY
+              value: normal
+            # （?）是否生成怪物，默认 false
+            # Determines if monsters can spawn. true - Enabled. Monsters appear at night and in the dark. false - Disabled. No monsters.
+            - name: SPAWN_MONSTERS
+              value: true
+            # （?）是否生成动物，默认 false
+            # Determines if animals can spawn. true - Animals spawn as normal. false - Animals immediately vanish.
+            - name: SPAWN_ANIMALS
+              value: true
+            # （?）是否生成NPC，默认false
+            # Determines if villagers can spawn. true - Villagers spawn as normal. false - Villagers immediately vanish.
+            - name: SPAWN_NPCS
+              value: true
+          volumeMounts:
+            - mountPath: /data # 你可以根据需要映射文件路径
+              name: minecraft-storage
+
+      volumes:
+        - name: minecraft-storage
+          persistentVolumeClaim:
+            claimName: minecraft-pvc # PVC 名称，下面会定义
+          
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: minecraft-pvc
+  namespace: minecraft
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi  # 根据需求设置大小
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minecraft-service
+  namespace: minecraft
+spec:
+  selector:
+    app: minecraft
+  type: NodePort
+  ports:
+    - protocol: TCP
+      port: 25565      # Minecraft 服务器的默认端口
+      targetPort: 25565 # 容器内部的端口
+      nodePort: 30011   # NodePort 端口
+      name: minecraft
+    - protocol: TCP
+      port: 27015
+      targetPort: 27015
+      nodePort: 30012
+      name: minecraft-rcon
+---
+# apiVersion: v1
+# kind: Service  
+# metadata:
+#   name: minecraf-rcon-service
+#   namespace: minecraft
+# spec:
+#   selector:
+#     app: minecraft
+#   ports:
+#     - port: 27015
+#       targetPort: 27015
+#       name: minecraf-rcon
