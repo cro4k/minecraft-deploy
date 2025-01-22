@@ -13,12 +13,25 @@ spec:
       labels:
         app: minecraft
     spec:
+      # imagePullSecrets:
+      #   - name: gitea.singsen.club
       containers:
         - name: minecraft
-          image: hashicraft/minecraft:v1.20.4-fabric 
+          image: hashicraft/minecraft:v1.20.4-fabric  
+          resources:
+            requests: 
+              memory: "1Gi"
+            limits:
+              memory: "2Gi"
           ports:
             - containerPort: 25565 # Minecraft 默认端口
           env:
+            # Java配置(不确定是否生效)
+            - name: JAVA_XMX
+              value: '1g'
+            - name: JAVA_XMS
+              value: '512m'
+              
             # 导入世界备份，默认：null
             # - name: WORLD_BACKUP
             #   value: https://github.com/nicholasjackson/hashicraft/releases/download/v0.0.0/world2.tar.gz
